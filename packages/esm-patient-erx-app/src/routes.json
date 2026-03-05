@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.openmrs.org/routes.schema.json",
+  "backendDependencies": {
+    "webservices.rest": ">=2.2.0"
+  },
+  "workspaces2": [
+    {
+      "name": "erx-print-workspace",
+      "component": "erxPrintWorkspace",
+      "window": "erx-print"
+    }
+  ],
+  "workspaceWindows2": [
+    {
+      "name": "erx-print",
+      "icon": "erxActionMenu",
+      "group": "patient-chart",
+      "order": 5
+    }
+  ],
+  "modals": [
+    {
+      "name": "erx-visit-note-required-modal",
+      "component": "erxVisitNoteRequiredModal"
+    },
+    {
+      "name": "erx-print-preview-modal",
+      "component": "erxPrintPreviewModal"
+    }
+  ]
+}

@@ -1,0 +1,561 @@
+@use '@carbon/layout';
+
+$page-width: 210mm;
+$page-height: 297mm;
+$page-side-spacing: 3%;
+$prescription-font-family: 'Raleway', 'Segoe UI', Arial, sans-serif;
+$color-text: #26343b;
+$color-muted: #6b7280;
+$color-accent: #567cb8;
+$color-line: #d6e0ea;
+$color-soft-line: #d6dce5;
+$color-white: #fff;
+
+.nonPrintActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: layout.$spacing-04;
+}
+
+.prescriptionPage {
+  width: $page-width;
+  height: $page-height;
+  margin: 0 auto;
+  background: $color-white;
+  color: $color-text;
+  font-family: $prescription-font-family;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+.prescriptionPage :global(.cds--text-input),
+.prescriptionPage :global(.cds--label),
+.prescriptionPage :global(.cds--text-input__field-wrapper),
+.prescriptionPage :global(input) {
+  font-family: inherit;
+}
+
+.header {
+  flex: 0 0 10%;
+  min-height: 10%;
+  max-height: 10%;
+  background: $color-white;
+  padding: 1rem $page-side-spacing;
+}
+
+.headerContent {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 30%;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.brandSection {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.logoSection {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.headerLogo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 8rem;
+  height: 4rem;
+}
+
+.logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.logoFallback {
+  color: #8c8c8c;
+  font-size: 0.9rem;
+}
+
+.clinicSection {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  flex: 1 1 auto;
+}
+
+.clinicTextBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.clinicName {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.12;
+  color: $color-text;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+  max-inline-size: 20ch;
+}
+
+.clinicTagline {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.12;
+  color: $color-accent;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+  max-inline-size: 20ch;
+}
+
+.providerSection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  align-self: flex-start;
+  text-align: right;
+}
+
+.providerName {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: $color-text;
+}
+
+.providerLine {
+  margin: 0.12rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.25;
+  text-align: right;
+  color: $color-accent;
+}
+
+.headerDivider {
+  margin: 0 $page-side-spacing;
+  border-top: 1px solid $color-line;
+}
+
+.body {
+  flex: 0 0 85%;
+  min-height: 85%;
+  max-height: 85%;
+  display: flex;
+  flex-direction: column;
+}
+
+.patientSection,
+.prescriptionBody,
+.footer {
+  padding-left: $page-side-spacing;
+  padding-right: $page-side-spacing;
+}
+
+.patientSection {
+  display: flex;
+  align-items: center;
+  padding-top: 0.5rem;
+  padding-bottom: 0.35rem;
+}
+
+.patientSummaryGrid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 0.8rem;
+  row-gap: 0.3rem;
+}
+
+.patientSummaryField {
+  min-width: 0;
+}
+
+.patientSection :global(.cds--label) {
+  margin-bottom: 0.1rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.1;
+  color: $color-muted;
+}
+
+.patientSection :global(.cds--text-input__field-wrapper) {
+  border-bottom: 1px solid $color-line;
+}
+
+.patientSection :global(.cds--text-input) {
+  height: 1.5rem;
+  min-height: 1.5rem;
+  padding: 0 0 0.12rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: $color-text;
+}
+
+.patientSection :global(.cds--text-input:focus),
+.patientSection :global(.cds--text-input[readonly]) {
+  border: 0;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.prescriptionBody {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-top: 2%;
+}
+
+.prescriptionColumns {
+  display: flex;
+  height: 100%;
+  gap: 1%;
+  align-items: flex-start;
+  position: relative;
+  z-index: 1;
+}
+
+.diagnosisColumn {
+  flex: 0 0 29%;
+  width: 29%;
+  display: flex;
+  flex-direction: column;
+  padding-left: 0;
+}
+
+.diagnosisSection {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.diagnosisTitle {
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: $color-accent;
+  border-bottom: 1px solid $color-line;
+}
+
+.diagnosisContent {
+  flex: 1;
+  min-height: 0;
+}
+
+.columnDivider {
+  width: 1px;
+  height: 100%;
+  align-self: stretch;
+  flex-shrink: 0;
+  background: linear-gradient(
+    to bottom,
+    $color-white 0%,
+    $color-line 8%,
+    $color-accent 50%,
+    $color-line 92%,
+    $color-white 100%
+  );
+}
+
+.rxColumn {
+  flex: 1 1 auto;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  padding-right: 0;
+}
+
+.rxHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 0.35rem;
+}
+
+.rxSymbol {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  color: $color-accent;
+  font-family: 'Times New Roman', Georgia, serif;
+
+  sub {
+    position: relative;
+    top: 0.35rem;
+    margin-left: -0.25rem;
+    font-size: 2.1rem;
+  }
+}
+
+.watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--watermark-opacity, 0.04);
+  transform: translate(-50%, -50%);
+
+  &[data-alignment='left'] {
+    left: 0;
+    justify-content: flex-start;
+    transform: translateY(-50%);
+    padding-left: 5%;
+  }
+
+  &[data-alignment='right'] {
+    left: auto;
+    right: 0;
+    justify-content: flex-end;
+    transform: translateY(-50%);
+    padding-right: 5%;
+  }
+
+  img,
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  img {
+    object-fit: contain;
+    filter: grayscale(20%);
+  }
+}
+
+.footer {
+  flex: 0 0 5%;
+  min-height: 5%;
+  max-height: 5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-top: 1px solid $color-line;
+  background: $color-white;
+  padding-top: 0.15rem;
+  padding-bottom: 0.1rem;
+}
+
+.footerContent {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.footerDisclaimer,
+.footerDetails {
+  margin: 0;
+  color: $color-text;
+  line-height: 1.15;
+}
+
+.footerDisclaimer {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.footerDetails {
+  font-size: 0.66rem;
+  font-weight: 400;
+}
+
+.signatureArea {
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-top: 0.75rem;
+  padding-right: $page-side-spacing;
+  padding-bottom: 0.35rem;
+}
+
+.signatureLine {
+  width: 12.5rem;
+  height: 1px;
+  margin-bottom: 0.35rem;
+  background: $color-text;
+}
+
+.signatureText {
+  margin: 0;
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: $color-accent;
+}
+
+.erxClinicalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.erxSectionLabel {
+  margin: 0 0 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: $color-text;
+}
+
+.erxVitalsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.erxVitalsCell {
+  min-height: 2.75rem;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px dashed $color-soft-line;
+}
+
+.erxVitalsCell span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.erxNoteList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.erxNoteItem {
+  padding-bottom: 0.55rem;
+  border-bottom: 1px dashed $color-soft-line;
+}
+
+.erxNoteItem:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.erxMedicationList {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.erxMedicationList ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.erxMedicationItem {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px dashed $color-soft-line;
+}
+
+.erxMedicationItem:last-child {
+  margin-bottom: 0;
+}
+
+.erxOthersSection {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.erxOthersContent,
+.erxBodyText {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #1f2937;
+}
+
+.erxMetaText {
+  font-size: 0.75rem;
+  color: $color-muted;
+}
+
+.erxBoldText {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.erxPlainText {
+  margin-top: 0.15rem;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: #1f2937;
+}
+
+@media print {
+  @page {
+    margin: 0;
+    size: A4;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .nonPrintActions {
+    display: none !important;
+  }
+
+  .prescriptionPage {
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+  }
+}

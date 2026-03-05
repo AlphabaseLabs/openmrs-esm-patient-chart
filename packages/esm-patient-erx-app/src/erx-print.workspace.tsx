@@ -1,0 +1,282 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Button, InlineLoading, InlineNotification } from '@carbon/react';
+import { useReactToPrint } from 'react-to-print';
+import {
+  age,
+  formatDate,
+  getConfig,
+  getPatientName,
+  parseDate,
+  useConfig,
+  useSession,
+  Workspace2,
+} from '@openmrs/esm-framework';
+import { type PatientWorkspace2DefinitionProps } from '@openmrs/esm-patient-common-lib';
+import type { ConfigObject } from './config-schema';
+import {
+  getClinicalNote,
+  getEducation,
+  getEncounterProvider,
+  getEncounterProviderName,
+  getProviderAttributes,
+  getPrimarySecondaryDiagnoses,
+  getSpecialtyDisplay,
+  useErxData,
+  useProviderDetails,
+} from './erx.resource';
+import ErxPrintBody from './erx-print-body.component';
+import ErxPrintFooter from './erx-print-footer.component';
+import ErxPrintHeader from './erx-print-header.component';
+import styles from './erx-print.scss';
+
+interface ErxPrintWorkspaceProps {}
+
+interface ErxPrintPageProps {
+  patientUuid: string;
+  patient: fhir.Patient;
+  visitContext?: any;
+  hideToolbar?: boolean;
+  autoPrint?: boolean;
+  onAfterPrint?: () => void;
+}
+
+type SharedPrescriptionConfig = {
+  logoUrl?: string;
+  hospitalSlogan?: string;
+  landlineNumber?: string;
+  whatsappNumber?: string;
+  email?: string;
+  address?: string;
+  website?: string;
+  watermarkOpacity?: number;
+  providerAttributeTypeUuids?: {
+    education?: string;
+    specialty?: string;
+  };
+};
+
+export const ErxPrintPage: React.FC<ErxPrintPageProps> = ({
+  patientUuid,
+  patient,
+  visitContext,
+  hideToolbar = false,
+  autoPrint = false,
+  onAfterPrint,
+}) => {
+  const { t } = useTranslation();
+  const config = useConfig<ConfigObject>();
+  const session = useSession();
+  const { data, isLoading, error } = useErxData(patientUuid, visitContext?.uuid);
+  const [hasTriggeredAutoPrint, setHasTriggeredAutoPrint] = useState(false);
+  const [sharedPrescriptionConfig, setSharedPrescriptionConfig] = useState<SharedPrescriptionConfig | null | undefined>(
+    undefined,
+  );
+  const printAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let disposed = false;
+
+    getConfig('@openmrs/esm-appointments-app')
+      .then((appointmentsConfig: any) => {
+        if (!disposed) {
+          setSharedPrescriptionConfig(appointmentsConfig?.prescriptionConfig ?? null);
+        }
+      })
+      .catch(() => {
+        if (!disposed) {
+          setSharedPrescriptionConfig(null);
+        }
+      });
+
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  const patientName = getPatientName(patient);
+  const patientGender = patient?.gender ? `${patient.gender[0].toUpperCase()}${patient.gender.slice(1)}` : '--';
+  const patientAge = patient?.birthDate ? age(patient.birthDate) : '--';
+  const mrn = patient?.identifier?.[0]?.value ?? '--';
+  const currentVisitNote = data?.currentVisitNote;
+  const recentVisitNotes = data?.recentVisitNotes ?? [];
+  const activeMedicationOrders = data?.activeMedicationOrders ?? [];
+  const currentVisitNoteText = getClinicalNote(currentVisitNote, config.encounterNoteTextConceptUuid);
+  const encounterProvider = getEncounterProvider(currentVisitNote);
+  const { providerDetails, isLoading: isLoadingProviderDetails } = useProviderDetails(encounterProvider?.uuid);
+  const providerName = getEncounterProviderName(currentVisitNote);
+  const diagnoses = getPrimarySecondaryDiagnoses(currentVisitNote);
+  const encounterDate = currentVisitNote?.encounterDatetime
+    ? formatDate(parseDate(currentVisitNote.encounterDatetime), { mode: 'wide', time: true })
+    : '--';
+  const printId = currentVisitNote?.uuid ? currentVisitNote.uuid.slice(0, 8).toUpperCase() : '--';
+  const logoSrc = sharedPrescriptionConfig?.logoUrl || config.logo?.src || '/emr/clinic-logo.png';
+  const clinicContactLine =
+    config.clinicInfo.contactLine ||
+    [sharedPrescriptionConfig?.address, sharedPrescriptionConfig?.landlineNumber].filter(Boolean).join(' | ');
+  const facilityName = config.clinicInfo.name || session?.sessionLocation?.display || '--';
+  const clinicTagline = config.clinicInfo.tagline || sharedPrescriptionConfig?.hospitalSlogan || '';
+  const providerAttributes = useMemo(
+    () => getProviderAttributes(providerDetails, encounterProvider),
+    [providerDetails, encounterProvider],
+  );
+  const providerSpecialty = useMemo(
+    () =>
+      getSpecialtyDisplay(providerAttributes, sharedPrescriptionConfig?.providerAttributeTypeUuids)?.toString()?.trim(),
+    [providerAttributes, sharedPrescriptionConfig?.providerAttributeTypeUuids],
+  );
+  const providerEducation = useMemo(
+    () => getEducation(providerAttributes, sharedPrescriptionConfig?.providerAttributeTypeUuids)?.toString()?.trim(),
+    [providerAttributes, sharedPrescriptionConfig?.providerAttributeTypeUuids],
+  );
+  const providerQualification = providerEducation;
+  const footerDetails = buildFooterDetails({
+    locationLabel: t('location', 'Location'),
+    phoneLabel: t('phone', 'Phone'),
+    emailLabel: t('email', 'Email'),
+    websiteLabel: t('website', 'Website'),
+    locationValue: sharedPrescriptionConfig?.address || clinicContactLine,
+    phoneValue: sharedPrescriptionConfig?.landlineNumber,
+    emailValue: sharedPrescriptionConfig?.email,
+    websiteValue: sharedPrescriptionConfig?.website,
+  });
+
+  const currentVisitNotesSection = useMemo(() => truncateSlipText(currentVisitNoteText, 500), [currentVisitNoteText]);
+  const isLoadingSharedPrescriptionConfig = sharedPrescriptionConfig === undefined;
+  const isWaitingForProviderDetails = Boolean(encounterProvider?.uuid) && isLoadingProviderDetails;
+  const isPrintReady = !isLoading && !error && !isLoadingSharedPrescriptionConfig && !isWaitingForProviderDetails;
+
+  const handlePrint = useReactToPrint({
+    contentRef: printAreaRef,
+    documentTitle: `eRx-${patientName || patientUuid}-${printId}`,
+    preserveAfterPrint: false,
+    onAfterPrint,
+    pageStyle: `
+      @page { margin: 0; size: A4; }
+      @media print {
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+    `,
+  });
+
+  useEffect(() => {
+    if (autoPrint && isPrintReady && !hasTriggeredAutoPrint) {
+      setHasTriggeredAutoPrint(true);
+      handlePrint();
+    }
+  }, [autoPrint, isPrintReady, hasTriggeredAutoPrint, handlePrint]);
+
+  return (
+    <>
+      {!hideToolbar ? (
+        <div className={styles.nonPrintActions}>
+          <Button size="sm" kind="primary" onClick={handlePrint}>
+            {t('printNow', 'Print')}
+          </Button>
+        </div>
+      ) : null}
+
+      {isLoading || isLoadingSharedPrescriptionConfig || isWaitingForProviderDetails ? (
+        <InlineLoading description={t('loadingErx', 'Loading eRx data...')} />
+      ) : null}
+
+      {error ? (
+        <InlineNotification
+          lowContrast={false}
+          kind="error"
+          title={t('unableToLoadErxData', 'Unable to load eRx data')}
+          subtitle={error.message}
+        />
+      ) : null}
+
+      {isPrintReady ? (
+        <div className={styles.prescriptionPage} ref={printAreaRef}>
+          <ErxPrintHeader
+            logoSrc={logoSrc}
+            logoAlt={config.logo.alt || 'Facility logo'}
+            facilityName={facilityName}
+            clinicTagline={clinicTagline}
+            providerName={providerName}
+            providerSpecialty={providerSpecialty}
+            providerQualification={providerQualification}
+          />
+
+          <ErxPrintBody
+            patientName={patientName || '--'}
+            mrn={mrn}
+            patientAge={patientAge}
+            patientGender={patientGender}
+            hasVisitContext={Boolean(visitContext)}
+            encounterDate={encounterDate}
+            diagnosesCombined={diagnoses.combined}
+            vitals={data.vitals}
+            showVitals={config.clinicInfo.showVitals}
+            recentVisitNotes={recentVisitNotes}
+            encounterNoteTextConceptUuid={config.encounterNoteTextConceptUuid}
+            activeMedicationOrders={activeMedicationOrders}
+            currentVisitNotesSection={currentVisitNotesSection}
+            watermarkLogoUrl={sharedPrescriptionConfig?.logoUrl}
+            watermarkOpacity={sharedPrescriptionConfig?.watermarkOpacity}
+          />
+
+          <ErxPrintFooter
+            showDisclaimer={config.clinicInfo.showDisclaimer}
+            disclaimer={config.clinicInfo.disclaimer}
+            footerDetails={footerDetails}
+          />
+        </div>
+      ) : null}
+    </>
+  );
+};
+
+const ErxPrintWorkspace: React.FC<PatientWorkspace2DefinitionProps<ErxPrintWorkspaceProps, {}>> = ({
+  groupProps: { patientUuid, patient, visitContext },
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Workspace2 title={t('erxPrint', 'eRx Print')}>
+      <ErxPrintPage patientUuid={patientUuid} patient={patient} visitContext={visitContext} />
+    </Workspace2>
+  );
+};
+
+export default ErxPrintWorkspace;
+
+function truncateSlipText(value: string, maxChars: number) {
+  if (!value) {
+    return '';
+  }
+
+  if (value.length <= maxChars) {
+    return value;
+  }
+
+  return `${value.slice(0, maxChars).trimEnd()}...`;
+}
+
+function buildFooterDetails(details: {
+  locationLabel: string;
+  phoneLabel: string;
+  emailLabel: string;
+  websiteLabel: string;
+  locationValue?: string;
+  phoneValue?: string;
+  emailValue?: string;
+  websiteValue?: string;
+}) {
+  return [
+    details.locationValue ? `${details.locationLabel}: ${details.locationValue}` : '',
+    details.phoneValue ? `${details.phoneLabel}: ${details.phoneValue}` : '',
+    details.emailValue ? `${details.emailLabel}: ${details.emailValue}` : '',
+    details.websiteValue ? `${details.websiteLabel}: ${details.websiteValue}` : '',
+  ]
+    .filter(Boolean)
+    .join(' | ');
+}
