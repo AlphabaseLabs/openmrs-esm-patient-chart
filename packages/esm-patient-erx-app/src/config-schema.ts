@@ -55,6 +55,19 @@ export const configSchema = {
       _description: 'Alternative text for the logo image',
     },
   },
+  watermark: {
+    logoUrl: {
+      _type: Type.String,
+      _default: '',
+      _description:
+        'Path or URL for the watermark logo. If empty, falls back to prescription config logo from appointments app.',
+    },
+    opacity: {
+      _type: Type.Number,
+      _default: 0.04,
+      _description: 'Opacity of the watermark (0-1). If not set, falls back to prescription config.',
+    },
+  },
   concepts: {
     systolicBloodPressureUuid: {
       _type: Type.ConceptUuid,
@@ -101,6 +114,33 @@ export const configSchema = {
       _description: "UUID for the 'Drug' order type to fetch medications",
     },
   },
+  providerAttributeTypeUuids: {
+    education: {
+      _type: Type.UUID,
+      _default: '1d482076-79a0-48ac-8e9f-5b846b6af67f',
+      _description: 'Provider attribute type UUID for Education (degrees, certifications)',
+    },
+    specialty: {
+      _type: Type.UUID,
+      _default: '6bae5f5c-b860-4c71-841d-bb6428ca9fbb',
+      _description: 'Provider attribute type UUID for Specialty',
+    },
+    specialization: {
+      _type: Type.UUID,
+      _default: '0a3c4d5e-6f7b-4c8d-1e2f-4a5b6c7d8e9f',
+      _description: 'Provider attribute type UUID for Specialization',
+    },
+    professionalAffiliation: {
+      _type: Type.UUID,
+      _default: '0a3c4d5e-6f7b-4c8d-1e2f-5a6b7c8d9e0f',
+      _description: 'Provider attribute type UUID for Professional Affiliation',
+    },
+    email: {
+      _type: Type.UUID,
+      _default: '9383828f-36f7-4962-9e08-ae2867716e6f',
+      _description: 'Provider attribute type UUID for Email',
+    },
+  },
 };
 
 export interface ConfigObject {
@@ -118,6 +158,10 @@ export interface ConfigObject {
     src: string;
     alt: string;
   };
+  watermark?: {
+    logoUrl?: string;
+    opacity?: number;
+  };
   concepts: {
     systolicBloodPressureUuid: string;
     diastolicBloodPressureUuid: string;
@@ -131,5 +175,12 @@ export interface ConfigObject {
   medicationOrders: {
     careSettingUuid: string;
     drugOrderTypeUUID: string;
+  };
+  providerAttributeTypeUuids: {
+    education: string;
+    specialty: string;
+    specialization: string;
+    professionalAffiliation: string;
+    email: string;
   };
 }

@@ -10,7 +10,9 @@ import {
   getEducation,
   getEncounterProvider,
   getEncounterProviderName,
+  getProfessionalAffiliation,
   getProviderAttributes,
+  getProviderEmail,
   getPrimarySecondaryDiagnoses,
   getSpecialtyDisplay,
   useErxData,
@@ -46,6 +48,9 @@ type SharedPrescriptionConfig = {
   providerAttributeTypeUuids?: {
     education?: string;
     specialty?: string;
+    specialization?: string;
+    professionalAffiliation?: string;
+    email?: string;
   };
 };
 
@@ -101,7 +106,7 @@ export const ErxPrintPage: React.FC<ErxPrintPageProps> = ({
   const providerName = getEncounterProviderName(currentVisitNote);
   const diagnoses = getPrimarySecondaryDiagnoses(currentVisitNote);
   const encounterDate = currentVisitNote?.encounterDatetime
-    ? formatDate(parseDate(currentVisitNote.encounterDatetime), { mode: 'wide', time: true })
+    ? formatPrescriptionDate(currentVisitNote.encounterDatetime)
     : '--';
   const printId = currentVisitNote?.uuid ? currentVisitNote.uuid.slice(0, 8).toUpperCase() : '--';
   const logoSrc = config.logo?.src || sharedPrescriptionConfig?.logoUrl;
@@ -114,16 +119,24 @@ export const ErxPrintPage: React.FC<ErxPrintPageProps> = ({
     () => getProviderAttributes(providerDetails, encounterProvider),
     [providerDetails, encounterProvider],
   );
+  const providerAttributeTypeUuids =
+    config.providerAttributeTypeUuids ?? sharedPrescriptionConfig?.providerAttributeTypeUuids;
   const providerSpecialty = useMemo(
-    () =>
-      getSpecialtyDisplay(providerAttributes, sharedPrescriptionConfig?.providerAttributeTypeUuids)?.toString()?.trim(),
-    [providerAttributes, sharedPrescriptionConfig?.providerAttributeTypeUuids],
+    () => getSpecialtyDisplay(providerAttributes, providerAttributeTypeUuids)?.toString()?.trim(),
+    [providerAttributes, providerAttributeTypeUuids],
   );
   const providerEducation = useMemo(
-    () => getEducation(providerAttributes, sharedPrescriptionConfig?.providerAttributeTypeUuids)?.toString()?.trim(),
-    [providerAttributes, sharedPrescriptionConfig?.providerAttributeTypeUuids],
+    () => getEducation(providerAttributes, providerAttributeTypeUuids)?.toString()?.trim(),
+    [providerAttributes, providerAttributeTypeUuids],
   );
-  const providerQualification = providerEducation;
+  const providerProfessionalAffiliation = useMemo(
+    () => getProfessionalAffiliation(providerAttributes, providerAttributeTypeUuids)?.toString()?.trim(),
+    [providerAttributes, providerAttributeTypeUuids],
+  );
+  const providerEmail = useMemo(
+    () => getProviderEmail(providerAttributes, providerAttributeTypeUuids)?.toString()?.trim(),
+    [providerAttributes, providerAttributeTypeUuids],
+  );
   const footerDetails = buildFooterDetails({
     locationLabel: t('location', 'Location'),
     phoneLabel: t('phone', 'Phone'),
@@ -210,43 +223,62 @@ export const ErxPrintPage: React.FC<ErxPrintPageProps> = ({
         />
       ) : null}
 
-      {isPrintReady ? (
-        <div className={styles.prescriptionPage} ref={printAreaRef}>
-          <ErxPrintHeader
-            logoSrc={logoSrc}
-            logoAlt={config.logo.alt || 'Facility logo'}
-            facilityName={facilityName}
-            clinicTagline={clinicTagline}
-            providerName={providerName}
-            providerSpecialty={providerSpecialty}
-            providerQualification={providerQualification}
-          />
+      {isPrintReady
+        ? (() => {
+            const watermarkLogoUrl = config.watermark?.logoUrl || sharedPrescriptionConfig?.logoUrl;
+            const watermarkOpacity = config.watermark?.opacity ?? sharedPrescriptionConfig?.watermarkOpacity ?? 0.04;
+            return (
+              <div className={styles.prescriptionPage} ref={printAreaRef}>
+                {watermarkLogoUrl ? (
+                  <div
+                    className={styles.watermark}
+                    style={{ '--watermark-opacity': watermarkOpacity } as React.CSSProperties}
+                  >
+                    <img src={watermarkLogoUrl} alt="" />
+                  </div>
+                ) : null}
+                <ErxPrintHeader
+                  logoSrc={logoSrc}
+                  logoAlt={config.logo.alt || 'Facility logo'}
+                  facilityName={facilityName}
+                  clinicTagline={clinicTagline}
+                  providerName={providerName}
+                  providerSpecialty={providerSpecialty}
+                  providerEducation={providerEducation}
+                  providerProfessionalAffiliation={providerProfessionalAffiliation}
+                  providerEmail={providerEmail}
+                />
+                <br />
 
-          <ErxPrintBody
-            patientName={patientName || '--'}
-            mrn={mrn}
-            patientAge={patientAge}
-            patientGender={patientGender}
-            hasVisitContext={Boolean(visitContext)}
-            encounterDate={encounterDate}
-            diagnosesCombined={diagnoses.combined}
-            vitals={data.vitals}
-            showVitals={config.clinicInfo.showVitals}
-            recentVisitNotes={recentVisitNotes}
-            encounterNoteTextConceptUuid={config.encounterNoteTextConceptUuid}
-            activeMedicationOrders={activeMedicationOrders}
-            currentVisitNotesSection={currentVisitNotesSection}
-            watermarkLogoUrl={sharedPrescriptionConfig?.logoUrl}
-            watermarkOpacity={sharedPrescriptionConfig?.watermarkOpacity}
-          />
+                <div className={styles.headerDivider} aria-hidden="true" />
 
-          <ErxPrintFooter
-            showDisclaimer={config.clinicInfo.showDisclaimer}
-            disclaimer={config.clinicInfo.disclaimer}
-            footerDetails={footerDetails}
-          />
-        </div>
-      ) : null}
+                <ErxPrintBody
+                  patientName={patientName || '--'}
+                  mrn={mrn}
+                  patientAge={patientAge}
+                  patientGender={patientGender}
+                  hasVisitContext={Boolean(visitContext)}
+                  encounterDate={encounterDate}
+                  primaryDiagnosis={diagnoses.primary}
+                  vitals={data.vitals}
+                  showVitals={config.clinicInfo.showVitals}
+                  recentVisitNotes={recentVisitNotes}
+                  encounterNoteTextConceptUuid={config.encounterNoteTextConceptUuid}
+                  activeMedicationOrders={activeMedicationOrders}
+                  currentVisitNotesSection={currentVisitNotesSection}
+                />
+
+                <div className={styles.headerDivider} aria-hidden="true" />
+
+                <ErxPrintFooter
+                  showDisclaimer={config.clinicInfo.showDisclaimer}
+                  disclaimer={config.clinicInfo.disclaimer}
+                  footerDetails={footerDetails}
+                />
+              </div>
+            );
+          })()
+        : null}
     </>
   );
 };
@@ -277,4 +309,20 @@ function buildFooterDetails(details: {
   ]
     .filter(Boolean)
     .join(' | ');
+}
+
+function formatPrescriptionDate(value: string) {
+  const date = parseDate(value);
+
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '--';
+  }
+
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+    .format(date)
+    .replace(/\s+/g, '-');
 }

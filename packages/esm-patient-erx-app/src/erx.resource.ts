@@ -120,6 +120,14 @@ interface ProviderDetails {
   attributes?: ProviderAttribute[];
 }
 
+type ProviderAttributeTypeUuids = {
+  education?: string;
+  specialty?: string;
+  specialization?: string;
+  professionalAffiliation?: string;
+  email?: string;
+};
+
 export interface ErxVitals {
   wt?: string;
   ht?: string;
@@ -342,18 +350,83 @@ export function getProviderAttributes(
   return all.filter((attribute) => !attribute?.voided);
 }
 
-export function getEducation(
-  providerAttributes: ProviderAttribute[],
-  attributeTypeUuids?: { education?: string; specialty?: string },
-) {
-  return providerAttributes?.find((attribute) => attribute?.attributeType?.uuid === attributeTypeUuids?.education)
-    ?.value;
+export function getEducation(providerAttributes: ProviderAttribute[], attributeTypeUuids?: ProviderAttributeTypeUuids) {
+  return getProviderAttributeText(providerAttributes, {
+    uuids: [attributeTypeUuids?.education],
+    names: ['Education'],
+  });
 }
 
 export function getSpecialtyDisplay(
   providerAttributes: ProviderAttribute[],
-  attributeTypeUuids?: { education?: string; specialty?: string },
+  attributeTypeUuids?: ProviderAttributeTypeUuids,
 ) {
-  return providerAttributes?.find((attribute) => attribute?.attributeType?.uuid === attributeTypeUuids?.specialty)
-    ?.value?.display;
+  return (
+    getProviderAttributeText(providerAttributes, {
+      uuids: [attributeTypeUuids?.specialization],
+      names: ['Specialization'],
+    }) ||
+    getProviderAttributeText(providerAttributes, {
+      uuids: [attributeTypeUuids?.specialty],
+      names: ['Specialty'],
+    })
+  );
+}
+
+export function getProfessionalAffiliation(
+  providerAttributes: ProviderAttribute[],
+  attributeTypeUuids?: ProviderAttributeTypeUuids,
+) {
+  return getProviderAttributeText(providerAttributes, {
+    uuids: [attributeTypeUuids?.professionalAffiliation],
+    names: ['Professional Affiliation'],
+  });
+}
+
+export function getProviderEmail(
+  providerAttributes: ProviderAttribute[],
+  attributeTypeUuids?: ProviderAttributeTypeUuids,
+) {
+  return getProviderAttributeText(providerAttributes, {
+    uuids: [attributeTypeUuids?.email],
+    names: ['Email'],
+  });
+}
+
+function getProviderAttributeText(
+  providerAttributes: ProviderAttribute[],
+  criteria: { uuids?: Array<string | undefined>; names?: string[] },
+) {
+  const attribute = providerAttributes.find((candidate) => {
+    const attributeUuid = candidate?.attributeType?.uuid;
+    const attributeName = candidate?.attributeType?.display?.trim().toLowerCase();
+    const matchesUuid = criteria.uuids?.filter(Boolean).includes(attributeUuid);
+    const matchesName = criteria.names?.some((name) => name.trim().toLowerCase() === attributeName);
+
+    return matchesUuid || matchesName;
+  });
+
+  return normalizeProviderAttributeValue(attribute?.value);
+}
+
+function normalizeProviderAttributeValue(value: any) {
+  if (value == null) {
+    return '';
+  }
+
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  if (typeof value === 'object') {
+    if (typeof value.display === 'string') {
+      return value.display.trim();
+    }
+
+    if (typeof value.name === 'string') {
+      return value.name.trim();
+    }
+  }
+
+  return String(value).trim();
 }

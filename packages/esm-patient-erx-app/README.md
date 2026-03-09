@@ -53,13 +53,15 @@ The package defines its config schema in `src/config-schema.ts`.
 - `clinicInfo.name`
   - Optional facility name override used in the print header
 - `clinicInfo.tagline`
-  - Reserved optional clinic tagline field
+  - Optional clinic tagline shown under the clinic name in the header
 - `clinicInfo.contactLine`
   - Optional contact fallback line
 - `clinicInfo.disclaimer`
   - Footer disclaimer text
 - `clinicInfo.showDisclaimer`
   - Controls whether the footer disclaimer is shown
+- `clinicInfo.showVitals`
+  - If true, show the vitals block in the clinical record section
 
 ### Logo
 
@@ -67,6 +69,13 @@ The package defines its config schema in `src/config-schema.ts`.
   - Optional local logo fallback if shared prescription config is unavailable
 - `logo.alt`
   - Accessible alt text for the logo
+
+### Watermark
+
+- `watermark.logoUrl`
+  - Path or URL for the watermark logo. If empty, falls back to prescription config logo from appointments app
+- `watermark.opacity`
+  - Opacity of the watermark (0–1). Default 0.04
 
 ### Vitals Concepts
 
@@ -87,6 +96,44 @@ These concept UUIDs are used to map observation values into the vitals block on 
 - `medicationOrders.drugOrderTypeUUID`
 
 These values are used to fetch only drug orders and avoid mixing in other order types.
+
+### Provider Attributes
+
+Provider details (specialty, education, etc.) are displayed in the prescription header. They come from **OpenMRS Provider Attribute Types** and are mapped via `providerAttributeTypeUuids` in this module's config.
+
+**Where to configure:** Set `providerAttributeTypeUuids` in the `@openmrs/esm-patient-erx-app` config. Falls back to `@openmrs/esm-appointments-app` prescription config when not set.
+
+**What to set up in OpenMRS:** Create or use existing Provider Attribute Types under **System Administration → Advanced Settings → Attribute Types** (filter by entity: Provider). Assign the corresponding attribute types to your providers.
+
+| Attribute Key | Purpose | Where It Appears |
+|---------------|---------|------------------|
+| `education` | Degrees, certifications, qualifications (e.g. MBBS, MRCP, FCPS) | Header, directly under provider specialty; supports multiple lines |
+| `specialty` | Primary clinical specialty (e.g. concept-based) | Header, immediately after provider name |
+| `specialization` | Detailed medical specialty or field (free text) | Header, same position as `specialty`; used if `specialty` is empty |
+| `professionalAffiliation` | Role and institution (e.g. Professor, Consultant, Dept. Head) | Header, after education lines |
+| `email` | Provider contact email | Header, shown as "Email: value" at the end of the provider block |
+
+**Default UUIDs** (defined in `config-schema.ts`):
+
+- `education`: `1d482076-79a0-48ac-8e9f-5b846b6af67f`
+- `specialty`: `6bae5f5c-b860-4c71-841d-bb6428ca9fbb`
+- `specialization`: `0a3c4d5e-6f7b-4c8d-1e2f-4a5b6c7d8e9f`
+- `professionalAffiliation`: `0a3c4d5e-6f7b-4c8d-1e2f-5a6b7c8d9e0f`
+- `email`: `9383828f-36f7-4962-9e08-ae2867716e6f`
+
+**Example config** (in `@openmrs/esm-patient-erx-app`):
+
+```json
+"providerAttributeTypeUuids": {
+  "education": "1d482076-79a0-48ac-8e9f-5b846b6af67f",
+  "specialty": "6bae5f5c-b860-4c71-841d-bb6428ca9fbb",
+  "specialization": "0a3c4d5e-6f7b-4c8d-1e2f-4a5b6c7d8e9f",
+  "professionalAffiliation": "0a3c4d5e-6f7b-4c8d-1e2f-5a6b7c8d9e0f",
+  "email": "9383828f-36f7-4962-9e08-ae2867716e6f"
+}
+```
+
+Attribute types are also matched by display name (e.g. "Education", "Specialty") if the UUID is missing.
 
 ## Routes And Extensions
 

@@ -10,7 +10,9 @@ interface ErxPrintHeaderProps {
   clinicTagline?: string;
   providerName: string;
   providerSpecialty?: string;
-  providerQualification?: string;
+  providerEducation?: string;
+  providerProfessionalAffiliation?: string;
+  providerEmail?: string;
 }
 
 const ErxPrintHeader: React.FC<ErxPrintHeaderProps> = ({
@@ -20,9 +22,23 @@ const ErxPrintHeader: React.FC<ErxPrintHeaderProps> = ({
   clinicTagline,
   providerName,
   providerSpecialty,
-  providerQualification,
+  providerEducation,
+  providerProfessionalAffiliation,
+  providerEmail,
 }) => {
   const { t } = useTranslation();
+  const hasNewlines = providerEducation?.includes('\n') || providerEducation?.includes('\\n');
+  const providerEducationLines =
+    hasNewlines && providerEducation
+      ? providerEducation
+          .replace(/\\n/g, '\n')
+          .split(/\r?\n/g)
+          .map((line) => line.trim())
+          .filter(Boolean)
+      : providerEducation
+        ? [providerEducation]
+        : [];
+  const providerDetailLines = [...providerEducationLines, providerProfessionalAffiliation].filter(Boolean);
 
   return (
     <header className={styles.header}>
@@ -51,8 +67,16 @@ const ErxPrintHeader: React.FC<ErxPrintHeaderProps> = ({
         <div className={styles.providerSection}>
           <Heading className={styles.providerName}>{providerName || t('provider', 'Provider')}</Heading>
           {providerSpecialty ? <FormLabel className={styles.providerLine}>{providerSpecialty}</FormLabel> : null}
-          {providerQualification ? (
-            <FormLabel className={styles.providerLine}>{providerQualification}</FormLabel>
+          {providerSpecialty && providerDetailLines.length ? <div className={styles.providerBreak} /> : null}
+          {providerDetailLines.map((line, index) => (
+            <FormLabel key={`${index}-${line}`} className={styles.providerLine}>
+              {line}
+            </FormLabel>
+          ))}
+          {providerEmail ? (
+            <FormLabel className={styles.providerLine}>
+              {t('email', 'Email')}: {providerEmail}
+            </FormLabel>
           ) : null}
         </div>
       </div>
